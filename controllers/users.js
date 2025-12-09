@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt')
 
 const { User, Blog } = require('../models')
 
+const tokenExtractor = require('../util/tokenExtractor')
+
 router.get('/', async (req, res) => {
 	const users = await User.findAll({
 		attributes: { exclude: ['passwordHash'] },
@@ -34,19 +36,25 @@ router.get('/:id', async (req, res) => {
 	}
 })
 
-router.put('/:username', async (req, res) => {
+router.put('/:username', tokenExtractor, async (req, res, next) => {
 	try {
 		const userToUpdate = await User.findOne({
 			where: {
 				username: req.params.username,
 			},
 		})
-		userToUpdate.username = req.body.username
-		await userToUpdate.save()
 
-		res.status(200).json(userToUpdate)
+		const loggedInUserOwnsAccount = userToUpdate.id === req.decodedToken.id
+
+		if (loggedInUserOwnsAccount) {
+			userToUpdate.username = req.body.username
+			await userToUpdate.save()
+			res.status(200).json(userToUpdate)
+		} else {
+			res.status(403).json({ error: 'Forbidden. You do not own this account.' })
+		}
 	} catch (error) {
-		res.status(400).json({ error })
+		next(error)
 	}
 })
 

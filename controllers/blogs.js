@@ -1,5 +1,7 @@
 const router = require('express').Router()
-const { Blog } = require('../models')
+const jwt = require('jsonwebtoken')
+const { User, Blog } = require('../models')
+const tokenExtractor = require('../util/tokenExtractor')
 
 const blogFinder = async (req, res, next) => {
 	req.blog = await Blog.findByPk(req.params.id)
@@ -14,7 +16,15 @@ const blogFinder = async (req, res, next) => {
 }
 
 router.get('/', async (_req, res) => {
-	const blogs = await Blog.findAll()
+	const blogs = await Blog.findAll({
+		include: {
+			model: User,
+			attributes: {
+				exclude: ['passwordHash', 'userId', 'createdAt', 'updatedAt', 'id'],
+			},
+		},
+		attributes: { exclude: ['userId'] },
+	})
 	res.json(blogs)
 })
 
@@ -22,9 +32,14 @@ router.get('/:id', blogFinder, async (req, res) => {
 	res.json(req.blog)
 })
 
-router.post('/', async (req, res, next) => {
+router.post('/', tokenExtractor, async (req, res, next) => {
 	try {
-		const blog = await Blog.create(req.body)
+		const user = await User.findByPk(req.decodedToken.id)
+		const blog = await Blog.create({
+			...req.body,
+			userId: user.id,
+			date: new Date(),
+		})
 		return res.json(blog)
 	} catch (error) {
 		res.status(400)
@@ -44,8 +59,14 @@ router.put('/:id', blogFinder, async (req, res) => {
 	}
 })
 
-router.delete('/:id', blogFinder, async (req, res) => {
-	await req.blog.destroy()
-	res.status(204).end()
+router.delete('/:id', tokenExtractor, blogFinder, async (req, res) => {
+	const loggedInUserOwnsBlog = req.decodedToken.id === req.blog.userId
+
+	if (loggedInUserOwnsBlog) {
+		await req.blog.destroy()
+		res.status(204).end()
+	} else {
+		res.status(403).json({ error: 'Not permitted. You do not own this blog.' })
+	}
 })
 module.exports = router
