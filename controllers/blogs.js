@@ -27,7 +27,6 @@ router.post('/', async (req, res, next) => {
 		const blog = await Blog.create(req.body)
 		return res.json(blog)
 	} catch (error) {
-		// return res.status(400).json({ error })
 		res.status(400)
 		next(error)
 	}
