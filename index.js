@@ -3,6 +3,7 @@ const { connectToDatabase } = require('./util/db')
 const blogsRouter = require('./controllers/blogs')
 const usersRouter = require('./controllers/users')
 const loginRouter = require('./controllers/login')
+const authorsRouter = require('./controllers/authors')
 
 const express = require('express')
 const app = express()
@@ -11,6 +12,7 @@ app.use(express.json())
 app.use('/api/blogs', blogsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/login', loginRouter)
+app.use('/api/authors', authorsRouter)
 
 const unknownEndpoint = (req, res) => {
 	res.status(404).send({ error: 'Unknown endpoint' })
@@ -18,15 +20,18 @@ const unknownEndpoint = (req, res) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, req, res, next) => {
-	// console.error(
-	// 	`\n${error.name ?? 'UnknownError'}: ${error.message ?? 'Unknown error.'}`
-	// )
+	console.error(
+		`\n${error.name ?? 'UnknownError'}: ${error.message ?? 'Unknown error.'}`
+	)
+
+	const errorName = error.name ?? 'UnknownError'
 
 	const errorMessage =
-		error.errors?.map((e) => e.message).join('\n') ?? 'Unknown error'
+		errorName + ': ' + error.errors?.map((e) => e.message).join('\n') ??
+		'Unknown error'
 
 	let statusCode = 400
-	switch (error.name) {
+	switch (errorName) {
 		case 'SequelizeValidationError':
 			statusCode = 400
 			break
@@ -37,7 +42,7 @@ const errorHandler = (error, req, res, next) => {
 			statusCode = 400
 	}
 
-	res.status(400).json({ error: errorMessage })
+	res.status(statusCode).json({ error: errorMessage })
 	console.log(JSON.stringify(error, null, 2))
 	next()
 }
