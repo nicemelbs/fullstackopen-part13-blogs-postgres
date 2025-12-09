@@ -18,9 +18,9 @@ const unknownEndpoint = (req, res) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, req, res, next) => {
-	// console.error(
-	// 	`\n${error.name ?? 'UnknownError'}: ${error.message ?? 'Unknown error.'}`
-	// )
+	console.error(
+		`\n${error.name ?? 'UnknownError'}: ${error.message ?? 'Unknown error.'}`
+	)
 
 	const errorMessage =
 		error.errors?.map((e) => e.message).join('\n') ?? 'Unknown error'
@@ -37,7 +37,7 @@ const errorHandler = (error, req, res, next) => {
 			statusCode = 400
 	}
 
-	res.status(400).json({ error: errorMessage })
+	res.status(statusCode).json({ error: errorMessage })
 	console.log(JSON.stringify(error, null, 2))
 	next()
 }
