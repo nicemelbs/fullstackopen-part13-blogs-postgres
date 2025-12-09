@@ -16,6 +16,9 @@ Blog.init(
 		url: {
 			type: DataTypes.TEXT,
 			allowNull: false,
+			validate: {
+				isUrl: { msg: 'Must be a valid URL [http://domain.tld/...]' },
+			},
 		},
 		title: {
 			type: DataTypes.TEXT,
