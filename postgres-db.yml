@@ -1,5 +1,8 @@
 # usage:
 # docker compose -f postgres-db.yml up --build
+
+# to access psql, make sure container is up
+# docker exec -it <container_id> psql -U postgres postgres
 services:
   postgres:
     image: postgres
