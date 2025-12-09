@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
 	res.json(users)
 })
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
 	const saltRounds = 10
 	try {
 		const passwordHash = await bcrypt.hash(req.body.password, saltRounds)
@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
 
 		res.json(user)
 	} catch (error) {
-		return res.status(400).json({ error })
+		next(error)
 	}
 })
 

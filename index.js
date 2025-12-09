@@ -18,7 +18,20 @@ const unknownEndpoint = (req, res) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, req, res, next) => {
-	console.error(`${error.name}: ${error.message}`)
+	let errorMessage = ''
+
+	switch (error.name) {
+		case 'SequelizeValidationError':
+			errorMessage += 'Username must be a valid email.'
+			break
+		case 'SequelizeUniqueConstraintError':
+			errorMessage += 'User with this name or email already exists'
+			break
+		default:
+			errorMessage += 'Unknown error'
+	}
+
+	console.error(`\n${error.name ?? 'UnknownError'}: ${errorMessage}`)
 	next()
 }
 app.use(errorHandler)
