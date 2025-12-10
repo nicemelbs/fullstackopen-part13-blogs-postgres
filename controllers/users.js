@@ -1,9 +1,17 @@
 const router = require('express').Router()
 const bcrypt = require('bcrypt')
 
-const { User, Blog, ReadingList } = require('../models')
+const { User, Blog, ActiveSession } = require('../models')
 
 const tokenExtractor = require('../util/tokenExtractor')
+
+const isAdmin = async (req, res, next) => {
+	const user = await User.findByPk(req.decodedToken.id)
+	if (!user.admin) {
+		return res.status(401).json({ error: 'Operation not allowed.' })
+	}
+	next()
+}
 
 router.get('/', async (req, res) => {
 	const users = await User.findAll({
@@ -87,5 +95,32 @@ router.put('/:username', tokenExtractor, async (req, res, next) => {
 		next(error)
 	}
 })
+
+router.put(
+	'/:username/disable',
+	tokenExtractor,
+	isAdmin,
+	async (req, res, next) => {
+		try {
+			const userToUpdate = await User.findOne({
+				where: {
+					username: req.params.username,
+				},
+				attributes: { exclude: ['passwordHash'] },
+			})
+
+			userToUpdate.disabled = req.body.disabled
+			await userToUpdate.save()
+
+			if (req.body.disabled) {
+				await ActiveSession.destroy({ where: { userId: userToUpdate.id } })
+			}
+
+			res.json(userToUpdate)
+		} catch (error) {
+			next(error)
+		}
+	}
+)
 
 module.exports = router

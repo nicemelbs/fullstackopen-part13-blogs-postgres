@@ -3,7 +3,7 @@ const router = require('express').Router()
 const bcrypt = require('bcrypt')
 
 const { SECRET } = require('../util/config')
-const { User } = require('../models')
+const { User, ActiveSession } = require('../models')
 
 router.post('/', async (req, res) => {
 	const body = req.body
@@ -13,12 +13,28 @@ router.post('/', async (req, res) => {
 		},
 	})
 
+	console.log('user logging in:', user)
+
 	const passwordCorrect = await bcrypt.compare(body.password, user.passwordHash)
 
 	if (!(user && passwordCorrect)) {
 		return res.status(401).json({
 			error: 'Invalid credentials',
 		})
+	}
+
+	if (user.disabled) {
+		await ActiveSession.destroy({ where: { userId: user.id } })
+		return res.status(401).json({
+			error: 'Account disabled. Please contact an admin.',
+		})
+	}
+
+	const activeSession = await ActiveSession.findOne({
+		where: { userId: user.id },
+	})
+	if (!activeSession) {
+		await ActiveSession.create({ userId: user.id })
 	}
 
 	const userForToken = {
