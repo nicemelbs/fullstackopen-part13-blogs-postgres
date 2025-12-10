@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const bcrypt = require('bcrypt')
 
-const { User, Blog } = require('../models')
+const { User, Blog, ReadingList } = require('../models')
 
 const tokenExtractor = require('../util/tokenExtractor')
 
@@ -33,7 +33,17 @@ router.post('/', async (req, res, next) => {
 })
 
 router.get('/:id', async (req, res) => {
-	const user = await User.findByPk(req.params.id)
+	const user = await User.findByPk(req.params.id, {
+		attributes: ['username', 'name'],
+		include: [
+			{
+				model: Blog,
+				as: 'readings',
+				attributes: { exclude: ['createdAt', 'updatedAt'] },
+				through: { attributes: ['read', 'id'] },
+			},
+		],
+	})
 
 	if (user) {
 		res.json(user)
