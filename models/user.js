@@ -15,7 +15,6 @@ User.init(
 			validate: {
 				isEmail: { msg: 'Invalid email.' },
 			},
-			unique: { msg: 'Email already registered.' },
 			allowNull: false,
 		},
 		passwordHash: {

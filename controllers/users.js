@@ -22,6 +22,12 @@ router.post('/', async (req, res, next) => {
 
 		res.json(user)
 	} catch (error) {
+		if (error.name === 'SequelizeUniqueConstraintError') {
+			next({
+				name: 'UniqueEmailConstraintError',
+				message: 'Email already registed.',
+			})
+		}
 		next(error)
 	}
 })

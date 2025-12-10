@@ -27,23 +27,12 @@ const errorHandler = (error, req, res, next) => {
 	const errorName = error.name ?? 'UnknownError'
 
 	const errorMessage =
-		errorName + ': ' + error.errors?.map((e) => e.message).join('\n') ??
-		'Unknown error'
+		error.name ?? errorName + typeof error.message === 'string'
+			? error.message
+			: error.message.join(',')
 
-	let statusCode = 400
-	switch (errorName) {
-		case 'SequelizeValidationError':
-			statusCode = 400
-			break
-		case 'SequelizeUniqueConstraintError':
-			statusCode = 400
-			break
-		default:
-			statusCode = 400
-	}
-
-	res.status(statusCode).json({ error: errorMessage })
-	console.log(JSON.stringify(error, null, 2))
+	res.status(400).json({ error: errorMessage })
+	// console.log(JSON.stringify(error, null, 2))
 	next()
 }
 app.use(errorHandler)
