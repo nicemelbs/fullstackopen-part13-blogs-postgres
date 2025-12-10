@@ -12,4 +12,24 @@ router.post('/', async (req, res, next) => {
 	}
 })
 
+router.put('/:id', tokenExtractor, async (req, res, next) => {
+	const listItem = await ReadingList.findByPk(req.params.id)
+	if (!listItem) {
+		res.status(404).end()
+	}
+	const loggedInUserOwnsList = req.decodedToken.id === listItem.userId
+	if (loggedInUserOwnsList) {
+		try {
+			listItem.read = req.body.read
+			await listItem.save()
+			res.json(listItem)
+		} catch (error) {
+			next(error)
+		}
+	} else
+		res
+			.status(403)
+			.json({ error: 'FORBIDDEN. This resource is not yours to modify.' })
+})
+
 module.exports = router
