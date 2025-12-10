@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const bcrypt = require('bcrypt')
 
-const { User, Blog } = require('../models')
+const { User, Blog, ReadingList } = require('../models')
 
 const tokenExtractor = require('../util/tokenExtractor')
 
@@ -33,7 +33,31 @@ router.post('/', async (req, res, next) => {
 })
 
 router.get('/:id', async (req, res) => {
-	const user = await User.findByPk(req.params.id)
+	const where = {}
+	if (req.query.read) {
+		switch (req.query.read) {
+			case 'true':
+				where.read = true
+				break
+			case 'false':
+				where.read = false
+			default:
+				console.log(
+					`\nWARNING: query param \`read\` did not match either true or false. Found \`${req.query.read}\` Ignoring filter.\n`
+				)
+		}
+	}
+	const user = await User.findByPk(req.params.id, {
+		attributes: ['username', 'name'],
+		include: [
+			{
+				model: Blog,
+				as: 'readings',
+				attributes: { exclude: ['createdAt', 'updatedAt'] },
+				through: { attributes: ['read', 'id'], where },
+			},
+		],
+	})
 
 	if (user) {
 		res.json(user)
